@@ -153,6 +153,16 @@ across multiple files can slip through. **A high score reduces, but does not
 eliminate, the need to manually review the auto-execution points** the report
 lists. Always prefer official sources and pin a version/commit.
 
+**Scanning `repo-scan` itself.** The scanner cannot meaningfully audit its own
+source: `scripts/scan_repo.py` contains the detection regexes as literal Python
+strings (`r"(curl|wget)...sh"`, `eval(`, `base64`, ...), so they match
+themselves when the file is read line-by-line. The `test-samples/` fixtures are
+also intentionally detected - that is their purpose. A scan of this repository
+will therefore land in CRITICAL. This is a known limitation of every
+regex-based scanner (bandit, detect-secrets, semgrep behave the same way) and
+not a signal about `repo-scan`'s real security posture. To sanity-check the
+scanner on a clean tree, point it at `test-samples/clean/` instead.
+
 ## License
 
 MIT - see [`LICENSE`](LICENSE).

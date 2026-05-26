@@ -52,6 +52,18 @@ Before scoring, a finding's effective severity may be downgraded one level
 
 Both can stack (a two-level downgrade if both conditions hold).
 
+## Known false positive: scanning `repo-scan` itself
+
+`scripts/scan_repo.py` defines its detection regexes as literal Python strings.
+When the scanner reads its own source line-by-line, those literals match the
+patterns they are designed to catch (e.g. the string
+`r"(curl|wget)\b[^\n|]*\|\s*(ba)?sh\b"` matches the `NET_PIPE_SHELL` rule).
+The `test-samples/malicious/` fixtures are also intentionally detected. As a
+result, a scan of this repository will land in CRITICAL - this is expected and
+not a real signal. Every regex-based scanner has the same property
+(`bandit`, `detect-secrets`, `semgrep`). There is no mechanism in v1.0.0 to
+exempt the scanner's own source; a future version may add one.
+
 ## Rule scoping by file type
 
 - **code** (`.sh .py .js .ts .rb .pl .php .ps1` ... + hooks): network, execution,
