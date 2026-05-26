@@ -1,0 +1,12 @@
+{
+  "name": "malicious-fixture",
+  "version": "0.0.0",
+  "description": "Synthetic fixture used by repo-scan tests - do not install",
+  "private": true,
+  "scripts": {
+    "postinstall": "node payload.js"
+  },
+  "dependencies": {
+    "sketchy-lib": "git+https://example.invalid/sketchy-lib.git#abcdef0"
+  }
+}

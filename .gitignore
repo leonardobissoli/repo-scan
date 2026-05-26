@@ -1,0 +1,28 @@
+# repo-scan output
+repo-scan-output/
+*.json.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Tooling caches and test outputs
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+/tests/.out/
+
+# Claude Code local project data (conversation logs, agent state, plans)
+.claude/

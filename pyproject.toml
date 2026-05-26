@@ -1,0 +1,30 @@
+# This file hosts tooling configuration only.
+# repo-scan ships as two standalone scripts under scripts/; no installable
+# Python package is produced. Do not add a [project] table here without
+# updating the docs and SKILL.md accordingly.
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+extend-exclude = ["test-samples/", "tests/.out/"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+]
+ignore = [
+    "S603",  # subprocess call: shell=False is already enforced in our code
+    "S607",  # starting subprocess with partial path: git is expected on PATH
+    "E501",  # line too long: long detection regex strings are intentional
+    "S108",  # "/tmp" in a string literal is the downgrade pattern, not a temp path
+    "S112",  # try/except/continue is the right shape for "skip unreadable files"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["S101"]  # asserts are the test mechanism

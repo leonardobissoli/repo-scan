@@ -1,0 +1,7 @@
+{
+  "name": "clean-fixture",
+  "version": "1.0.0",
+  "description": "Benign fixture used by repo-scan tests",
+  "license": "MIT",
+  "private": true
+}
