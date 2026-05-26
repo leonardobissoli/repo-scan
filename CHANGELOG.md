@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- README hero screenshot of the HTML dashboard plus a secondary screenshot
+  of the DOCX cover page, both from a real-world scan of
+  [`obra/superpowers`](https://github.com/obra/superpowers) (89/100 LOW RISK).
+  Replaces the previous text-only README with a visual that conveys what the
+  product does in 5 seconds. Screenshots live under `docs/`.
+
 ### Fixed
 - HTML dashboard gauge had its color gradient inverted relative to the
   universal convention: high scores were pointing at the red side and low

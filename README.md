@@ -7,6 +7,13 @@
 [![Static analysis](https://img.shields.io/badge/analysis-static%20only-16A34A.svg)](#how-it-works)
 [![Read-only repository](https://img.shields.io/badge/repository-read--only-6B7280.svg)](#repository-access-policy)
 
+![Dashboard preview](docs/dashboard.png)
+
+> *Live example: scan of [`obra/superpowers`](https://github.com/obra/superpowers) on
+> 2026-05-26 (commit `f2cbfbe`). 89/100 LOW RISK, 2 MEDIUM + 2 LOW findings across
+> Dynamic Execution and Dependencies. Findings reflect the project state at that
+> point in time.*
+
 `repo-scan` clones a repository (or reads a local path), statically scans the
 code **without executing anything**, and produces a **DOCX report** plus an
 interactive **HTML dashboard** with a **0-100 score**, per-category risk,
@@ -118,6 +125,12 @@ All artifacts land in `./repo-scan-output/` by default:
 - `repo_scan.json` - structured findings, score, category summary, verdict.
 - `repo_scan_report.docx` - detailed, archivable report.
 - `repo_scan_dashboard.html` - dark dashboard with a 0-100 gauge, severity cards, and a filterable findings table.
+
+![DOCX cover page](docs/report.png)
+
+> *Cover page of the DOCX report for the same `obra/superpowers` scan shown
+> above. The DOCX is meant to be archived or shared in a review thread; the
+> HTML dashboard is meant to be opened and interacted with locally.*
 
 ## Scoring
 
