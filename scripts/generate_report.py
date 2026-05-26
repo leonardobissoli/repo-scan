@@ -452,11 +452,28 @@ function togFP(btn){{
 def main():
     args = sys.argv[1:]
     if not args:
-        print("Usage: generate_report.py <scan.json> [--docx out.docx] [--html out.html]")
+        print(
+            "Usage: generate_report.py <scan.json> " "[--docx out.docx] [--html out.html] [--force]"
+        )
         sys.exit(1)
     json_path = args[0]
     with open(json_path, encoding="utf-8") as fh:
         data = json.load(fh)
+
+    force = "--force" in args
+    if data.get("self_scan") and not force:
+        print(
+            "Input JSON is from a self-scan (target is a copy of repo-scan).\n"
+            "Skipping DOCX and HTML generation - the verdict is "
+            '"NOT REPRESENTATIVE" and a written report would be misleading.\n'
+            "\n"
+            "The raw findings are already in:\n"
+            f"  {json_path}\n"
+            "\n"
+            "If you really need the artifacts (debug, screenshot of the banner, "
+            "demo), re-run with --force."
+        )
+        return
 
     os.makedirs(DEFAULT_OUT_DIR, exist_ok=True)
     docx_out = os.path.join(DEFAULT_OUT_DIR, "repo_scan_report.docx")

@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- `generate_report.py` now **SKIPS** DOCX/HTML generation when the input
+  JSON is a self-scan (`self_scan: true`); pass `--force` to override.
+  A self-scan report is misleading by definition (its own verdict says
+  "NOT REPRESENTATIVE"), so producing 30+ pages of findings nobody should
+  act on is anti-pattern. The raw JSON is still written by `scan_repo.py`.
+
 ### Added
 - **Self-scan detection.** When the target repository is a copy of
   `repo-scan` (detected via content fingerprint on `scripts/scan_repo.py`),

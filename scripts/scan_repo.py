@@ -765,7 +765,7 @@ def main():
             commit=commit,
             scanned_at=datetime.now(timezone.utc).isoformat(),
             scanner="repo-scan",
-            scanner_version="1.0.2",
+            scanner_version="1.0.3",
             rules_count=len(RULES),
         ),
         stats=stats,

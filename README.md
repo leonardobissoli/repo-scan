@@ -104,9 +104,11 @@ scan_repo.py <url|path> [--out PATH] [--keep]
   --out PATH   Where to write the JSON (default: ./repo-scan-output/repo_scan.json)
   --keep       Keep the temporary clone instead of deleting it
 
-generate_report.py <scan.json> [--docx PATH] [--html PATH]
+generate_report.py <scan.json> [--docx PATH] [--html PATH] [--force]
   --docx PATH  Output DOCX path (default: ./repo-scan-output/repo_scan_report.docx)
   --html PATH  Output HTML path (default: ./repo-scan-output/repo_scan_dashboard.html)
+  --force      Generate the reports even when the input JSON is a self-scan
+               (default: skip with an explanatory message; see Limitations).
 ```
 
 ## Output

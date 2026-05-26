@@ -161,6 +161,41 @@ def main():
         failures += 1
 
     print()
+    print("[generate_report.py on self-scan JSON]")
+    self_json = os.path.join(OUT_DIR, "self.json")
+    docx_out = os.path.join(OUT_DIR, "self_report.docx")
+    html_out = os.path.join(OUT_DIR, "self_dashboard.html")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            os.path.join(REPO_ROOT, "scripts", "generate_report.py"),
+            self_json,
+            "--docx",
+            docx_out,
+            "--html",
+            html_out,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if not check(
+        "report generator exits 0 on self-scan",
+        proc.returncode == 0,
+        detail=proc.stderr.strip()[:200] if proc.returncode else "",
+    ):
+        failures += 1
+    if not check(
+        "no DOCX written for self-scan (without --force)",
+        not os.path.exists(docx_out),
+    ):
+        failures += 1
+    if not check(
+        "no HTML written for self-scan (without --force)",
+        not os.path.exists(html_out),
+    ):
+        failures += 1
+
+    print()
     if failures:
         print(f"FAILED: {failures} assertion(s)")
         sys.exit(1)
