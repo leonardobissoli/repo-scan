@@ -409,6 +409,85 @@ def looks_like_test_or_fixture(rel):
     )
 
 
+# Detect when a match falls inside a Python raw-string literal r"..." or r'...'.
+# This is the dominant false-positive pattern: a scanner's own detection regexes
+# look exactly like the strings they are designed to catch.
+_RAW_STRING_RX = re.compile(r"""r(['"])(?:\\.|(?!\1).)*\1""")
+
+# Detect lines that look like a rule-metadata key/value assignment, e.g.
+#   desc="Remote content piped into the shell"
+#   rec="...curl|bash..."
+#   rx=r"..."
+# When a detection rule's pattern matches such a line, the match is in the
+# metadata describing the rule, not in executable code.
+_PY_METADATA_LINE = re.compile(r"""^\s*(rx|desc|rec|description|recommendation)\s*=\s*r?['"]""")
+
+
+def _in_python_raw_string(line, start, end):
+    for m in _RAW_STRING_RX.finditer(line):
+        if m.start() <= start and end <= m.end():
+            return True
+    return False
+
+
+def _in_python_comment(line, start, ext):
+    """True if the match position sits after a `#` on the same line in a Python file."""
+    if ext != ".py":
+        return False
+    hash_pos = line.find("#")
+    return 0 <= hash_pos < start
+
+
+def _in_python_metadata_string(line, ext):
+    """True if the line in a .py file looks like a rule-metadata assignment."""
+    if ext != ".py":
+        return False
+    return bool(_PY_METADATA_LINE.match(line))
+
+
+def _wrapped_in_quote_char(line, start, end, ext):
+    """True if the match is immediately wrapped by matching `, ', or " characters
+    on a Markdown line.
+
+    More robust than pair-counting when prose contains an odd number of quotes.
+    Catches both inline `code` spans and quoted prose like
+    '"ignore previous instructions"' that describes the pattern rather than
+    being a live instruction.
+    """
+    if ext != ".md":
+        return False
+    if start == 0 or end > len(line) - 1:
+        return False
+    before = line[start - 1]
+    after = line[end]
+    return before == after and before in "\"'`"
+
+
+def likely_false_positive(line, start, end, ext):
+    """
+    Heuristic: does the match look like documentation or scanner-source-code
+    rather than a live payload?
+
+    Returns True when the match falls inside:
+      - a Python raw-string literal (typical regex definition)
+      - a Python `#` comment
+      - a Python rule-metadata assignment line (rx=, desc=, rec=)
+      - a Markdown span wrapped by matching `, ', or " characters
+        (inline code or quoted prose describing a pattern)
+
+    Important: this is INFORMATIONAL only. It is surfaced in the JSON/DOCX/HTML
+    output to help a reviewer triage findings, but it does NOT change the
+    severity or the score. A future version may add scoring suppression once
+    the heuristic has been validated in the field.
+    """
+    return (
+        _in_python_raw_string(line, start, end)
+        or _in_python_comment(line, start, ext)
+        or _in_python_metadata_string(line, ext)
+        or _wrapped_in_quote_char(line, start, end, ext)
+    )
+
+
 # ---------------------------------------------------------------------------
 # SCAN
 # ---------------------------------------------------------------------------
@@ -454,7 +533,8 @@ def scan_tree(root):
             for rule in RULES:
                 if not rule_applies(rule.get("scope", "any"), kind):
                     continue
-                if re.search(rule["rx"], line):
+                m = re.search(rule["rx"], line)
+                if m:
                     sev = rule["sev"]
                     eff_sev = sev
                     notes = []
@@ -467,7 +547,16 @@ def scan_tree(root):
                     if rule["id"] == "FS_DESTRUCTIVE" and "/tmp" in line:
                         eff_sev = order[max(0, order.index(eff_sev) - 1)]
                         notes.append("target in /tmp")
-                    note = (" (" + "; ".join(notes) + "; severity downgraded)") if notes else ""
+                    # 3) Heuristic: does the match look like documentation /
+                    #    scanner source instead of a live payload? Informational
+                    #    only; does NOT affect severity or score in v1.x.
+                    likely_fp = likely_false_positive(line, m.start(), m.end(), ext)
+                    if likely_fp:
+                        notes.append(
+                            "match inside raw-string / comment / inline code "
+                            "(likely false positive, NOT auto-suppressed)"
+                        )
+                    note = (" (" + "; ".join(notes) + ")") if notes else ""
                     findings.append(
                         dict(
                             rule_id=rule["id"],
@@ -481,6 +570,7 @@ def scan_tree(root):
                             description=rule["desc"] + note,
                             recommendation=rule["rec"],
                             in_test=is_test,
+                            likely_false_positive=likely_fp,
                         )
                     )
 

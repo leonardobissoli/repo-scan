@@ -162,6 +162,11 @@ def build_docx(data, out_path):
             hr.bold = True
             hr.font.size = Pt(11)
             hr.font.color.rgb = RGBColor.from_string(SEV_COLOR[f["severity"]])
+            if f.get("likely_false_positive"):
+                tag = h.add_run("  [likely false positive]")
+                tag.bold = True
+                tag.font.size = Pt(9)
+                tag.font.color.rgb = RGBColor.from_string("6B7280")
 
             loc = doc.add_paragraph()
             loc.add_run("Location: ").bold = True
@@ -241,10 +246,19 @@ def build_html(data, out_path):
         or "<li style='color:#16A34A'>No auto-execution points</li>"
     )
 
+    def _fp_badge(f):
+        return (
+            '<span class="fp-badge" title="Match looks like documentation or '
+            "scanner source rather than a live payload. Informational only - "
+            'verify manually.">likely FP</span>'
+            if f.get("likely_false_positive")
+            else ""
+        )
+
     find_rows = (
         "".join(
-            f'<tr data-sev="{f["severity"]}">'
-            f'<td><span class="pill" style="background:#{SEV_COLOR[f["severity"]]}">{f["severity"]}</span></td>'
+            f'<tr data-sev="{f["severity"]}" data-fp="{"1" if f.get("likely_false_positive") else "0"}">'
+            f'<td><span class="pill" style="background:#{SEV_COLOR[f["severity"]]}">{f["severity"]}</span>{_fp_badge(f)}</td>'
             f'<td><b>{esc(f["rule_id"])}</b><br><span class="muted">{esc(f["category"])}</span></td>'
             f'<td><code>{esc(f["file"])}:{f["line"]}</code></td>'
             f'<td>{esc(f["description"])}<br><code class="snip">{esc(f["snippet"])}</code>'
@@ -254,6 +268,8 @@ def build_html(data, out_path):
         )
         or '<tr><td colspan="4" style="text-align:center;color:#16A34A;padding:24px">Clean scan - no findings.</td></tr>'
     )
+
+    fp_count = sum(1 for f in findings if f.get("likely_false_positive"))
 
     html = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
@@ -294,6 +310,11 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#9a
 .filters{{margin:6px 0 12px}} .filters button{{background:#0f141d;color:var(--txt);border:1px solid var(--line);
  padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;margin-right:6px}}
 .filters button.active{{background:{band_color};border-color:{band_color};color:#fff}}
+.filters .sep{{display:inline-block;width:1px;height:20px;background:var(--line);vertical-align:middle;margin:0 6px}}
+.fp-badge{{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;
+ background:#1f2937;color:var(--muted);border:1px solid var(--line);cursor:help}}
+tr[data-fp="1"]{{opacity:.55}} tr[data-fp="1"]:hover{{opacity:1}}
+.hide-fp tr[data-fp="1"]{{display:none}}
 .sec{{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 10px}}
 .disclaimer{{font-size:11px;color:var(--muted);margin-top:18px;line-height:1.6}}
 </style></head><body>
@@ -337,8 +358,10 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#9a
       <button onclick="flt(this,'HIGH')">High</button>
       <button onclick="flt(this,'MEDIUM')">Medium</button>
       <button onclick="flt(this,'LOW')">Low</button>
+      <span class="sep"></span>
+      <button onclick="togFP(this)" title="{fp_count} finding(s) flagged as likely false positive">Hide likely FP ({fp_count})</button>
     </div>
-    <table><thead><tr><th>Sev</th><th>Rule</th><th>Location</th><th>Detail & Recommendation</th></tr></thead>
+    <table id="ftbl"><thead><tr><th>Sev</th><th>Rule</th><th>Location</th><th>Detail & Recommendation</th></tr></thead>
     <tbody id="ftab">{find_rows}</tbody></table>
   </div>
 </div>
@@ -353,11 +376,17 @@ Prefer official sources and pin the version/commit.
 
 <script>
 function flt(btn,sev){{
-  document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.filters button').forEach((b,i)=>{{ if(i<5) b.classList.remove('active'); }});
   btn.classList.add('active');
   document.querySelectorAll('#ftab tr').forEach(tr=>{{
-    tr.style.display = (sev==='ALL'||tr.dataset.sev===sev)?'':'none';
+    tr.dataset.sevHidden = (sev!=='ALL' && tr.dataset.sev!==sev) ? '1':'0';
+    tr.style.display = tr.dataset.sevHidden==='1' ? 'none' : '';
   }});
+}}
+function togFP(btn){{
+  var tbl = document.getElementById('ftbl');
+  tbl.classList.toggle('hide-fp');
+  btn.classList.toggle('active');
 }}
 </script>
 </body></html>"""

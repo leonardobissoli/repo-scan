@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- `likely_false_positive` boolean on every finding (JSON, DOCX, HTML). Set
+  to `true` when the match falls inside a Python raw-string literal, a
+  Python `#` comment, a Python rule-metadata assignment (`rx=`, `desc=`,
+  `rec=`), or a Markdown span wrapped by `` ` `` / `'` / `"`. Informational
+  only - does NOT change severity or score in v1.x.
+- HTML dashboard: "Hide likely FP" filter button + per-row dimming + a
+  "likely FP" badge next to the severity pill.
+- DOCX report: inline "[likely false positive]" tag next to the severity
+  heading when the flag is set.
+- New documentation [`references/interpreting-findings.md`](references/interpreting-findings.md) -
+  step-by-step playbook for triaging a report, with two worked examples
+  (a real positive and a false positive that look identical in summary).
+- README "Limitations" section now explains the self-scan paradox and
+  points to the new interpreting-findings guide.
+- `references/scoring-rubric.md` section "Known false positive: scanning
+  `repo-scan` itself".
+
 ### Changed
 - Repository switched to **public read-only** mode: no GitHub Actions, no
   pull requests, no Issues, no external contributions accepted. See

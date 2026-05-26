@@ -111,6 +111,26 @@ def main():
     ):
         failures += 1
 
+    if not check(
+        "every finding carries the likely_false_positive field",
+        all("likely_false_positive" in f for f in mal["findings"]),
+    ):
+        failures += 1
+
+    fp_in_malicious = [f for f in mal["findings"] if f.get("likely_false_positive")]
+    detail = (
+        f"{len(fp_in_malicious)} flagged: "
+        + ", ".join(f"{x['file']}:{x['line']} {x['rule_id']}" for x in fp_in_malicious[:3])
+        if fp_in_malicious
+        else ""
+    )
+    if not check(
+        "malicious fixture has zero likely_false_positive findings",
+        not fp_in_malicious,
+        detail=detail,
+    ):
+        failures += 1
+
     print()
     if failures:
         print(f"FAILED: {failures} assertion(s)")

@@ -163,6 +163,15 @@ regex-based scanner (bandit, detect-secrets, semgrep behave the same way) and
 not a signal about `repo-scan`'s real security posture. To sanity-check the
 scanner on a clean tree, point it at `test-samples/clean/` instead.
 
+### How to tell a real finding from a false positive
+
+Starting in v1.0.1 every finding carries a `likely_false_positive` boolean and
+the HTML dashboard offers a "Hide likely FP" filter. The full triage playbook
+- with two worked examples (a real positive and a false positive that look
+identical in summary form) - lives in
+[`references/interpreting-findings.md`](references/interpreting-findings.md).
+**Read it once before you act on any CRITICAL verdict, including this repo's.**
+
 ## License
 
 MIT - see [`LICENSE`](LICENSE).
