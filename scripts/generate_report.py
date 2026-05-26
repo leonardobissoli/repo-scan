@@ -329,7 +329,7 @@ h1{{font-size:20px;margin:0 0 2px}} .sub{{color:var(--muted);font-size:13px;marg
 .gauge-wrap{{display:flex;flex-direction:column;align-items:center;justify-content:center}}
 .gauge{{position:relative;width:240px;height:130px;overflow:hidden}}
 .gauge .arc{{position:absolute;width:240px;height:240px;border-radius:50%;
- background:conic-gradient(from 270deg,#16A34A 0deg,#F2A900 90deg,#C0152F 180deg,transparent 180deg);
+ background:conic-gradient(from 270deg,#C0152F 0deg,#F2A900 90deg,#16A34A 180deg,transparent 180deg);
  -webkit-mask:radial-gradient(circle 76px at 120px 120px,transparent 75px,#000 76px);
  mask:radial-gradient(circle 76px at 120px 120px,transparent 75px,#000 76px);}}
 .needle{{position:absolute;left:120px;bottom:0;width:3px;height:108px;background:var(--txt);

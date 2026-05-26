@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Fixed
+- HTML dashboard gauge had its color gradient inverted relative to the
+  universal convention: high scores were pointing at the red side and low
+  scores at the green side. The conic-gradient was swapped so the green
+  half now sits where the needle lands for high (good) scores and the red
+  half where it lands for low (bad) scores. The self-scan grey override is
+  unaffected.
+
 ### Changed
 - `generate_report.py` now **SKIPS** DOCX/HTML generation when the input
   JSON is a self-scan (`self_scan: true`); pass `--force` to override.
