@@ -131,6 +131,35 @@ def main():
     ):
         failures += 1
 
+    if not check(
+        "fixtures are NOT detected as self-scan",
+        not clean.get("self_scan") and not mal.get("self_scan"),
+        detail=f"clean.self_scan={clean.get('self_scan')} mal.self_scan={mal.get('self_scan')}",
+    ):
+        failures += 1
+
+    print()
+    print("[repo-scan root (self-scan)]")
+    self = run_scan(REPO_ROOT, "self.json")
+    if not check(
+        "self_scan flag is True",
+        self.get("self_scan") is True,
+        detail=f"got {self.get('self_scan')!r}",
+    ):
+        failures += 1
+    if not check(
+        "verdict band is SELF-SCAN",
+        self["verdict"]["band"] == "SELF-SCAN",
+        detail=f"got {self['verdict']['band']!r}",
+    ):
+        failures += 1
+    if not check(
+        "verdict action is NOT REPRESENTATIVE",
+        self["verdict"]["action"] == "NOT REPRESENTATIVE",
+        detail=f"got {self['verdict']['action']!r}",
+    ):
+        failures += 1
+
     print()
     if failures:
         print(f"FAILED: {failures} assertion(s)")
@@ -138,7 +167,8 @@ def main():
     print(
         f"PASSED: clean=score {clean['score']}/{clean['verdict']['band']}, "
         f"malicious=score {mal['score']}/{mal['verdict']['band']}, "
-        f"rules triggered={len(triggered & EXPECTED_MALICIOUS_RULES)}/{len(EXPECTED_MALICIOUS_RULES)}"
+        f"rules triggered={len(triggered & EXPECTED_MALICIOUS_RULES)}/{len(EXPECTED_MALICIOUS_RULES)}, "
+        f"self_scan_band={self['verdict']['band']}"
     )
 
 

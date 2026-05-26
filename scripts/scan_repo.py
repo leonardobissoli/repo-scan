@@ -409,6 +409,33 @@ def looks_like_test_or_fixture(rel):
     )
 
 
+def detect_self_scan(root):
+    """Return True when `root` looks like a copy of repo-scan itself.
+
+    Detection is by content fingerprint, not path, so it catches forks under
+    any GitHub username as well as freshly cloned temp directories. The cost
+    of a false positive (something else that happens to ship a
+    scripts/scan_repo.py with every marker) is only a cosmetic verdict
+    rewrite, so the threshold is intentionally permissive.
+    """
+    script = os.path.join(root, "scripts", "scan_repo.py")
+    if not os.path.isfile(script):
+        return False
+    try:
+        with open(script, encoding="utf-8", errors="replace") as fh:
+            content = fh.read()
+    except OSError:
+        return False
+    markers = (
+        "RULES = [",
+        "def compute_score",
+        "NET_PIPE_SHELL",
+        "OBF_BASE64_EXEC",
+        "PI_OVERRIDE",
+    )
+    return all(m in content for m in markers)
+
+
 # Detect when a match falls inside a Python raw-string literal r"..." or r'...'.
 # This is the dominant false-positive pattern: a scanner's own detection regexes
 # look exactly like the strings they are designed to catch.
@@ -720,6 +747,17 @@ def main():
     score, by_sev, by_cat = compute_score(findings)
     band, action, verdict_text = verdict_for(score, by_sev)
 
+    is_self_scan = detect_self_scan(repo_dir)
+    if is_self_scan:
+        band = "SELF-SCAN"
+        action = "NOT REPRESENTATIVE"
+        verdict_text = (
+            "This run targets repo-scan's own source code. The numeric score "
+            "below reflects the scanner matching its own regex literals and "
+            "intentional test fixtures - it is NOT a security assessment of "
+            "this repository. See references/interpreting-findings.md."
+        )
+
     report = dict(
         meta=dict(
             source=source_label,
@@ -727,7 +765,7 @@ def main():
             commit=commit,
             scanned_at=datetime.now(timezone.utc).isoformat(),
             scanner="repo-scan",
-            scanner_version="1.0.0",
+            scanner_version="1.0.2",
             rules_count=len(RULES),
         ),
         stats=stats,
@@ -736,6 +774,7 @@ def main():
         severity_counts=by_sev,
         category_summary=by_cat,
         verdict=dict(band=band, action=action, text=verdict_text),
+        self_scan=is_self_scan,
         findings=sorted(findings, key=lambda f: SEVERITY_LEVELS.index(f["severity"]), reverse=True),
     )
 
@@ -749,15 +788,20 @@ def main():
 
     # Short summary for stdout
     print(f"JSON: {out_path}")
-    print(f"SCORE: {score}/100  | VERDICT: {band} -> {action}")
-    print(
-        f"Findings: CRIT={by_sev.get('CRITICAL',0)} HIGH={by_sev.get('HIGH',0)} "
-        f"MED={by_sev.get('MEDIUM',0)} LOW={by_sev.get('LOW',0)}"
-    )
-    print(
-        f"Files: {stats['total_files']} | exec: {stats['exec_file_count']} | "
-        f"auto-exec points: {len(exec_points)}"
-    )
+    if is_self_scan:
+        print("SELF-SCAN DETECTED  | repo-scan auditing repo-scan")
+        print(f"(raw score {score}/100, {len(findings)} findings - not representative)")
+        print("See references/interpreting-findings.md for triage guidance.")
+    else:
+        print(f"SCORE: {score}/100  | VERDICT: {band} -> {action}")
+        print(
+            f"Findings: CRIT={by_sev.get('CRITICAL',0)} HIGH={by_sev.get('HIGH',0)} "
+            f"MED={by_sev.get('MEDIUM',0)} LOW={by_sev.get('LOW',0)}"
+        )
+        print(
+            f"Files: {stats['total_files']} | exec: {stats['exec_file_count']} | "
+            f"auto-exec points: {len(exec_points)}"
+        )
 
 
 if __name__ == "__main__":

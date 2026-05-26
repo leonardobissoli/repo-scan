@@ -157,11 +157,17 @@ lists. Always prefer official sources and pin a version/commit.
 source: `scripts/scan_repo.py` contains the detection regexes as literal Python
 strings (`r"(curl|wget)...sh"`, `eval(`, `base64`, ...), so they match
 themselves when the file is read line-by-line. The `test-samples/` fixtures are
-also intentionally detected - that is their purpose. A scan of this repository
-will therefore land in CRITICAL. This is a known limitation of every
-regex-based scanner (bandit, detect-secrets, semgrep behave the same way) and
-not a signal about `repo-scan`'s real security posture. To sanity-check the
-scanner on a clean tree, point it at `test-samples/clean/` instead.
+also intentionally detected - that is their purpose. This is a known
+limitation of every regex-based scanner (bandit, detect-secrets, semgrep
+behave the same way) and not a signal about `repo-scan`'s real security
+posture.
+
+Starting in v1.0.2 the scanner detects this case via a content fingerprint on
+`scripts/scan_repo.py` and **overrides the verdict** to
+**SELF-SCAN - NOT REPRESENTATIVE** (grey, neutral) instead of CRITICAL. The
+HTML and DOCX reports show a banner at the top explaining the situation; the
+raw numeric score is preserved in the JSON for transparency. To sanity-check
+the rules on a clean tree, point the scanner at `test-samples/clean/` instead.
 
 ### How to tell a real finding from a false positive
 

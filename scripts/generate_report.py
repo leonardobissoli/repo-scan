@@ -31,6 +31,7 @@ BAND_COLOR = {
     "MODERATE RISK": "F2A900",
     "HIGH RISK": "E8590C",
     "CRITICAL": "C0152F",
+    "SELF-SCAN": "6B7280",
 }
 
 DEFAULT_OUT_DIR = os.path.join(os.getcwd(), "repo-scan-output")
@@ -55,6 +56,7 @@ def build_docx(data, out_path):
     score = data["score"]
     verdict = data["verdict"]
     band = verdict["band"]
+    is_self_scan = bool(data.get("self_scan"))
     band_rgb = RGBColor.from_string(BAND_COLOR.get(band, "6B7280"))
 
     t = doc.add_paragraph()
@@ -71,10 +73,16 @@ def build_docx(data, out_path):
 
     vp = doc.add_paragraph()
     vp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = vp.add_run(f"SCORE {score}/100")
-    r.bold = True
-    r.font.size = Pt(30)
-    r.font.color.rgb = band_rgb
+    if is_self_scan:
+        r = vp.add_run(f"raw score {score}/100")
+        r.bold = True
+        r.font.size = Pt(18)
+        r.font.color.rgb = band_rgb
+    else:
+        r = vp.add_run(f"SCORE {score}/100")
+        r.bold = True
+        r.font.size = Pt(30)
+        r.font.color.rgb = band_rgb
 
     vp2 = doc.add_paragraph()
     vp2.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -86,6 +94,21 @@ def build_docx(data, out_path):
     vp3 = doc.add_paragraph()
     vp3.alignment = WD_ALIGN_PARAGRAPH.CENTER
     vp3.add_run(verdict["text"]).font.size = Pt(10.5)
+
+    if is_self_scan:
+        banner = doc.add_paragraph()
+        banner.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        b1 = banner.add_run(
+            "This is a self-scan of repo-scan's own source. "
+            "The score and verdict are NOT a security signal about this "
+            "repository. The numeric score reflects the scanner matching its "
+            "own regex literals and the intentional test fixtures under "
+            "test-samples/. For a step-by-step explanation and triage "
+            "playbook, see references/interpreting-findings.md."
+        )
+        b1.font.size = Pt(9.5)
+        b1.font.color.rgb = RGBColor.from_string("6B7280")
+        b1.italic = True
 
     doc.add_paragraph()
 
@@ -221,7 +244,28 @@ def build_html(data, out_path):
     sc = data["severity_counts"]
     cats = data["category_summary"]
     findings = data["findings"]
+    is_self_scan = bool(data.get("self_scan"))
+    body_class = "self-scan" if is_self_scan else ""
     gauge_deg = int(180 * (score / 100))
+    score_display = (
+        f'raw score {score}<span style="font-size:13px;color:var(--muted)">/100</span>'
+        if is_self_scan
+        else f'{score}<span style="font-size:18px;color:var(--muted)">/100</span>'
+    )
+    self_scan_banner = (
+        '<div class="self-scan-banner">'
+        '<div class="ssb-label">SELF-SCAN DETECTED</div>'
+        '<div class="ssb-text">This is a scan of repo-scan\'s own source. '
+        "The score and verdict below are NOT a security signal about this "
+        "repository - the scanner matches its own regex literals and the "
+        "intentional <code>test-samples/</code> fixtures, which guarantees "
+        "a CRITICAL raw score for any working copy of repo-scan. "
+        '<a href="https://github.com/leonardobissoli/repo-scan/blob/main/references/interpreting-findings.md" '
+        'target="_blank">How to read the findings &rarr;</a>'
+        "</div></div>"
+        if is_self_scan
+        else ""
+    )
 
     def esc(s):
         return _html.escape(str(s))
@@ -315,17 +359,26 @@ code{{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#9a
  background:#1f2937;color:var(--muted);border:1px solid var(--line);cursor:help}}
 tr[data-fp="1"]{{opacity:.55}} tr[data-fp="1"]:hover{{opacity:1}}
 .hide-fp tr[data-fp="1"]{{display:none}}
+.self-scan-banner{{background:#1f2937;border-left:5px solid #F2A900;border-radius:10px;padding:14px 18px;
+ margin-bottom:18px;color:var(--txt)}}
+.self-scan-banner .ssb-label{{font-size:11px;font-weight:800;letter-spacing:1.5px;color:#F2A900;margin-bottom:6px}}
+.self-scan-banner .ssb-text{{font-size:13px;line-height:1.55;color:var(--txt)}}
+.self-scan-banner a{{color:#9ad;text-decoration:underline;text-decoration-color:#374151}}
+body.self-scan .gauge .arc{{background:#374151 !important}}
+body.self-scan .score{{font-size:22px !important;color:#6B7280 !important}}
+body.self-scan .band{{color:#6B7280 !important}}
 .sec{{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 10px}}
 .disclaimer{{font-size:11px;color:var(--muted);margin-top:18px;line-height:1.6}}
-</style></head><body>
+</style></head><body class="{body_class}">
 
 <h1>Repository Security Report &middot; repo-scan</h1>
 <div class="sub">{esc(meta.get('source'))} &nbsp;&middot;&nbsp; commit {esc(meta.get('commit'))} &nbsp;&middot;&nbsp; {esc(meta.get('scanned_at'))}</div>
 
+{self_scan_banner}
 <div class="grid">
   <div class="card gauge-wrap">
     <div class="gauge"><div class="arc"></div><div class="needle"></div><div class="hub"></div></div>
-    <div class="score">{score}<span style="font-size:18px;color:var(--muted)">/100</span></div>
+    <div class="score">{score_display}</div>
     <div class="band">{esc(band)}</div>
     <div class="action"><b>{esc(verdict['action'])}</b><br>{esc(verdict['text'])}</div>
   </div>

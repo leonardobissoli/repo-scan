@@ -7,6 +7,13 @@ pattern itself, intentional test fixtures) and false negatives (heavily
 obfuscated payloads). This guide is the step-by-step playbook for triaging
 each finding in the report.
 
+> **If your report shows a `SELF-SCAN - NOT REPRESENTATIVE` verdict, you are
+> auditing a copy of `repo-scan` itself.** The score is meaningless in that
+> case - the scanner detects its own regex literals and the intentional
+> `test-samples/` fixtures. Skip to the worked examples below to see what
+> the false positives look like in practice; the same triage logic applies
+> to any other repository you scan.
+
 For the score formula and severity downgrades, see
 [`scoring-rubric.md`](scoring-rubric.md). For the rule catalog, see
 [`threat-patterns.md`](threat-patterns.md). This file picks up where they

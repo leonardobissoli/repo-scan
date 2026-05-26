@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 ### Added
+- **Self-scan detection.** When the target repository is a copy of
+  `repo-scan` (detected via content fingerprint on `scripts/scan_repo.py`),
+  the scanner overrides the verdict to `SELF-SCAN - NOT REPRESENTATIVE`
+  (grey, neutral) instead of CRITICAL. The HTML and DOCX reports show a
+  banner at the top explaining the situation; the raw numeric score is
+  preserved in the JSON (`self_scan: true`, `score: <raw>`) for
+  transparency. stdout prints `SELF-SCAN DETECTED` instead of the usual
+  `SCORE x/100 | VERDICT: ...` line.
 - `likely_false_positive` boolean on every finding (JSON, DOCX, HTML). Set
   to `true` when the match falls inside a Python raw-string literal, a
   Python `#` comment, a Python rule-metadata assignment (`rx=`, `desc=`,
